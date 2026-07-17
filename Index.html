@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Piggy Bank Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAF3FA;
+    --card:#FFFFFF;
+    --ink:#1C3550;
+    --ink-soft:#5B7189;
+    --gold:#F4B942;
+    --gold-deep:#D99A1B;
+    --spend:#E56A5A;
+    --earn:#4FAE85;
+    --line:#DCE8F2;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'Nunito',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:16px 14px calc(90px + env(safe-area-inset-bottom));
+    max-width:520px;
+    margin:0 auto;
+  }
+  header{display:flex;align-items:center;gap:10px;margin:6px 2px 18px}
+  .pig{font-size:34px;line-height:1;transform:scaleX(-1)}
+  h1{font-family:'Baloo 2',cursive;font-weight:800;font-size:26px;letter-spacing:.2px}
+  header p{font-size:13px;color:var(--ink-soft);font-weight:600}
+
+  .kid{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:0 3px 14px rgba(28,53,80,.08);
+    margin-bottom:16px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .kid-top{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 16px 12px;
+  }
+  .coin{
+    width:52px;height:52px;flex:none;border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #FFDF8E, var(--gold) 55%, var(--gold-deep));
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.12), 0 2px 5px rgba(217,154,27,.4);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Baloo 2',cursive;font-weight:800;font-size:22px;color:#8A5F00;
+  }
+  .kid-name{font-family:'Baloo 2',cursive;font-weight:700;font-size:20px}
+  .kid-balance{font-family:'Baloo 2',cursive;font-weight:800;font-size:26px;margin-left:auto;text-align:right}
+  .kid-balance small{display:block;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:var(--ink-soft);letter-spacing:.4px;text-transform:uppercase}
+  .kid-balance.low{color:var(--spend)}
+
+  .txns{border-top:1px dashed var(--line)}
+  .txn{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;font-weight:600;
+  }
+  .txn:last-child{border-bottom:none}
+  .txn .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .txn.spend .dot{background:var(--spend)}
+  .txn.earn .dot{background:var(--earn)}
+  .txn .label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .txn .date{font-size:11px;color:var(--ink-soft);font-weight:700;flex:none}
+  .txn .amt{font-weight:800;flex:none;font-variant-numeric:tabular-nums}
+  .txn.spend .amt{color:var(--spend)}
+  .txn.earn .amt{color:var(--earn)}
+  .txn .del{
+    flex:none;border:none;background:none;color:#B9C7D4;font-size:16px;
+    padding:4px 2px 4px 8px;cursor:pointer;
+  }
+  .empty-txns{padding:12px 16px;font-size:13px;color:var(--ink-soft);font-weight:600;text-align:center}
+
+  .kid-actions{display:flex;gap:8px;padding:12px 16px 14px}
+  button{font-family:'Nunito',sans-serif;-webkit-tap-highlight-color:transparent}
+  .btn{
+    border:none;border-radius:14px;font-weight:800;font-size:14px;
+    padding:11px 14px;cursor:pointer;transition:transform .08s;
+  }
+  .btn:active{transform:scale(.96)}
+  .btn-spend{flex:1;background:#FDEDEB;color:var(--spend)}
+  .btn-earn{flex:1;background:#E8F6F0;color:var(--earn)}
+  .btn-remove{background:none;color:#B9C7D4;font-size:13px;font-weight:700;padding:11px 8px}
+
+  .add-kid{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(18px + env(safe-area-inset-bottom));
+    width:calc(100% - 28px);max-width:492px;
+    background:var(--ink);color:#fff;
+    border:none;border-radius:18px;
+    font-family:'Baloo 2',cursive;font-weight:700;font-size:17px;
+    padding:15px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(28,53,80,.35);
+  }
+  .add-kid:active{transform:translateX(-50%) scale(.98)}
+
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--ink-soft);
+  }
+  .empty-state .pig-big{font-size:64px;transform:scaleX(-1);display:inline-block;margin-bottom:12px}
+  .empty-state h2{font-family:'Baloo 2',cursive;color:var(--ink);font-size:20px;margin-bottom:6px}
+  .empty-state p{font-size:14px;font-weight:600}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(28,53,80,.45);
+    display:none;align-items:flex-end;justify-content:center;z-index:10;
+  }
+  .overlay.open{display:flex}
+  .sheet{
+    background:#fff;width:100%;max-width:520px;
+    border-radius:24px 24px 0 0;
+    padding:22px 20px calc(24px + env(safe-area-inset-bottom));
+    animation:up .22s ease-out;
+  }
+  @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @media (prefers-reduced-motion: reduce){.sheet{animation:none}.btn:active,.add-kid:active{transform:none}}
+  .sheet h3{font-family:'Baloo 2',cursive;font-size:20px;margin-bottom:14px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:12px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .field input{
+    width:100%;border:2px solid var(--line);border-radius:12px;
+    padding:12px;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;color:var(--ink);
+    outline:none;background:#FBFDFF;
+  }
+  .field input:focus{border-color:var(--gold)}
+  .sheet-btns{display:flex;gap:10px;margin-top:16px}
+  .sheet-btns .cancel{flex:1;background:#EFF4F9;color:var(--ink-soft)}
+  .sheet-btns .confirm{flex:2;background:var(--ink);color:#fff}
+  .sheet-btns .confirm.spend-mode{background:var(--spend)}
+  .sheet-btns .confirm.earn-mode{background:var(--earn)}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="pig">🐷</span>
+  <div>
+    <h1>Piggy Bank Tracker</h1>
+    <p>Birthday money &amp; spending</p>
+  </div>
+</header>
+
+<div id="kids"></div>
+
+<button class="add-kid" onclick="openKidSheet()">+ Add a kid</button>
+
+<!-- Add kid sheet -->
+<div class="overlay" id="kidOverlay">
+  <div class="sheet">
+    <h3>Add a kid</h3>
+    <div class="field">
+      <label>Name</label>
+      <input id="kidName" type="text" placeholder="e.g. Emma" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Birthday money ($)</label>
+      <input id="kidMoney" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="sheet-btns">
+      <button class="btn cancel" onclick="closeSheets()">Cancel</button>
+      <button class="btn confirm" onclick="saveKid()">Add kid</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction sheet -->
+<div class="overlay" id="txnOverlay">
+  <div class="sheet">
+    <h3 id="txnTitle">Spend money</h3>
+    <div class="field">
+      <label>What was it for?</label>
+      <input id="txnLabel" type="text" placeholder="e.g. Lego set" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Amount ($)</label>
+      <input id="txnAmt" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="sheet-btns">
+      <button class="btn cancel" onclick="closeSheets()">Cancel</button>
+      <button class="btn confirm" id="txnConfirm" onclick="saveTxn()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'kids-money-tracker';
+let kids = [];
+let txnCtx = null; // {kidId, type}
+
+/* ---- storage: tries Claude artifact storage, then localStorage; warns if neither works ---- */
+let storageMode = null; // 'claude' | 'local' | 'none'
+
+function showBanner(msg){
+  let b = document.getElementById('storeBanner');
+  if (!b){
+    b = document.createElement('div');
+    b.id = 'storeBanner';
+    b.style.cssText = 'background:#FDEDEB;color:#B0392B;font-size:12px;font-weight:700;'+
+      'padding:10px 14px;border-radius:12px;margin:0 0 14px;line-height:1.4;';
+    document.getElementById('kids').before(b);
+  }
+  b.textContent = msg;
+}
+
+const store = {
+  async load(){
+    // Try Claude artifact storage first
+    if (window.storage && typeof window.storage.get === 'function'){
+      try{
+        const r = await window.storage.get(KEY);
+        storageMode = 'claude';
+        return r && r.value ? JSON.parse(r.value) : [];
+      }catch(e){
+        // Key may just not exist yet — test that we can WRITE before trusting it
+        try{
+          await window.storage.set(KEY + '-ping', '1');
+          storageMode = 'claude';
+          return [];
+        }catch(e2){ /* claude storage unusable, fall through */ }
+      }
+    }
+    // Fall back to browser localStorage
+    try{
+      localStorage.setItem(KEY + '-ping', '1');
+      localStorage.removeItem(KEY + '-ping');
+      storageMode = 'local';
+      const raw = localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){
+      storageMode = 'none';
+      showBanner('⚠️ This browser is blocking saving, so data will be lost when you close this page. ' +
+        'If you opened this from the Files app preview or a private/incognito tab, open it in regular Safari or Chrome instead.');
+      return [];
+    }
+  },
+  async save(data){
+    const json = JSON.stringify(data);
+    // Attempt in order regardless of what load() decided, so a hiccup in one doesn't lose data
+    if (window.storage && typeof window.storage.set === 'function'){
+      try{ await window.storage.set(KEY, json); storageMode = 'claude'; return; }
+      catch(e){ console.warn('Claude storage save failed:', e); }
+    }
+    try{
+      localStorage.setItem(KEY, json);
+      storageMode = 'local';
+      return;
+    }catch(e){
+      console.error('All save methods failed:', e);
+      showBanner('⚠️ Saving failed (' + (e && e.message ? e.message : 'storage blocked') + '). ' +
+        'Your changes will disappear when you close this page. Try opening the file in regular Safari or Chrome (not a file preview or private tab).');
+    }
+  }
+};
+
+/* ---- helpers ---- */
+const $ = id => document.getElementById(id);
+const money = n => '$' + Number(n).toFixed(2);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const balance = k => k.start + k.txns.reduce((s,t)=> s + (t.type==='earn' ? t.amt : -t.amt), 0);
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---- render ---- */
+function render(){
+  const box = $('kids');
+  if (!kids.length){
+    box.innerHTML = `<div class="empty-state">
+      <span class="pig-big">🐷</span>
+      <h2>No kids yet</h2>
+      <p>Tap "Add a kid" to start tracking their birthday money.</p>
+    </div>`;
+    return;
+  }
+  box.innerHTML = kids.map(k => {
+    const bal = balance(k);
+    const txnRows = k.txns.length
+      ? k.txns.slice().reverse().map(t => `
+        <div class="txn ${t.type}">
+          <span class="dot"></span>
+          <span class="label">${esc(t.label)}</span>
+          <span class="date">${t.date}</span>
+          <span class="amt">${t.type==='earn' ? '+' : '−'}${money(t.amt)}</span>
+          <button class="del" onclick="delTxn('${k.id}','${t.id}')" aria-label="Delete transaction">✕</button>
+        </div>`).join('')
+      : `<div class="empty-txns">No spending yet — started with ${money(k.start)}</div>`;
+    return `
+    <div class="kid">
+      <div class="kid-top">
+        <div class="coin">${esc(k.name.charAt(0).toUpperCase())}</div>
+        <div class="kid-name">${esc(k.name)}</div>
+        <div class="kid-balance ${bal < 0 ? 'low' : ''}"><small>left</small>${money(bal)}</div>
+      </div>
+      <div class="txns">${txnRows}</div>
+      <div class="kid-actions">
+        <button class="btn btn-spend" onclick="openTxnSheet('${k.id}','spend')">− Spend</button>
+        <button class="btn btn-earn" onclick="openTxnSheet('${k.id}','earn')">+ Add money</button>
+        <button class="btn btn-remove" onclick="removeKid('${k.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- kid sheet ---- */
+function openKidSheet(){
+  $('kidName').value = '';
+  $('kidMoney').value = '';
+  $('kidOverlay').classList.add('open');
+  setTimeout(()=> $('kidName').focus(), 100);
+}
+async function saveKid(){
+  const name = $('kidName').value.trim();
+  const amt = parseFloat($('kidMoney').value) || 0;
+  if (!name){ $('kidName').focus(); return; }
+  kids.push({ id: uid(), name, start: Math.round(amt*100)/100, txns: [] });
+  await store.save(kids);
+  closeSheets();
+  render();
+}
+async function removeKid(id){
+  const k = kids.find(x => x.id === id);
+  if (!k) return;
+  if (!confirm(`Remove ${k.name} and all their transactions?`)) return;
+  kids = kids.filter(x => x.id !== id);
+  await store.save(kids);
+  render();
+}
+
+/* ---- transaction sheet ---- */
+function openTxnSheet(kidId, type){
+  txnCtx = { kidId, type };
+  const k = kids.find(x => x.id === kidId);
+  $('txnTitle').textContent = type === 'spend' ? `${k.name} spent money on…` : `Add money for ${k.name}`;
+  const btn = $('txnConfirm');
+  btn.className = 'btn confirm ' + (type === 'spend' ? 'spend-mode' : 'earn-mode');
+  btn.textContent = type === 'spend' ? 'Subtract it' : 'Add it';
+  $('txnLabel').value = '';
+  $('txnAmt').value = '';
+  $('txnOverlay').classList.add('open');
+  setTimeout(()=> $('txnLabel').focus(), 100);
+}
+async function saveTxn(){
+  if (!txnCtx) return;
+  const label = $('txnLabel').value.trim();
+  const amt = parseFloat($('txnAmt').value);
+  if (!label){ $('txnLabel').focus(); return; }
+  if (!amt || amt <= 0){ $('txnAmt').focus(); return; }
+  const k = kids.find(x => x.id === txnCtx.kidId);
+  if (!k) return;
+  const d = new Date();
+  k.txns.push({
+    id: uid(),
+    label,
+    amt: Math.round(amt*100)/100,
+    type: txnCtx.type,
+    date: (d.getMonth()+1) + '/' + d.getDate()
+  });
+  await store.save(kids);
+  closeSheets();
+  render();
+}
+async function delTxn(kidId, txnId){
+  const k = kids.find(x => x.id === kidId);
+  if (!k) return;
+  k.txns = k.txns.filter(t => t.id !== txnId);
+  await store.save(kids);
+  render();
+}
+
+function closeSheets(){
+  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('open'));
+  txnCtx = null;
+}
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeSheets(); });
+});
+
+/* ---- init ---- */
+(async () => { kids = await store.load(); render(); })();
+</script>
+</body>
+</html>
