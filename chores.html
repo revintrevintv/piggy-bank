@@ -252,4 +252,57 @@ function render(){
   $('allDone').classList.toggle('show', pct === 100 && total > 0);
 
   $('choreList').innerHTML = chores.map(c => `
-    
+<div class="chore ${c.done ? 'done' : ''}" onclick="toggle('${c.id}')">
+      <div class="box">${c.done ? '✓' : ''}</div>
+      <div class="text">${esc(c.text)}</div>
+      <button class="del" onclick="event.stopPropagation(); delChore('${c.id}')" aria-label="Delete chore">✕</button>
+    </div>`).join('');
+}
+
+async function toggle(id){
+  const c = chores.find(x => x.id === id);
+  if (!c) return;
+  c.done = !c.done;
+  render();
+  await store.save(chores);
+}
+async function delChore(id){
+  const c = chores.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm(`Remove "${c.text}"?`)) return;
+  chores = chores.filter(x => x.id !== id);
+  render();
+  await store.save(chores);
+}
+async function resetAll(){
+  if (!confirm('Uncheck everything?')) return;
+  chores.forEach(c => c.done = false);
+  render();
+  await store.save(chores);
+}
+function openAddSheet(){
+  $('choreText').value = '';
+  $('addOverlay').classList.add('open');
+  setTimeout(()=> $('choreText').focus(), 100);
+}
+async function saveChore(){
+  const text = $('choreText').value.trim();
+  if (!text){ $('choreText').focus(); return; }
+  chores.push({ id: uid(), text, done: false });
+  closeSheets();
+  render();
+  await store.save(chores);
+}
+function closeSheets(){
+  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('open'));
+}
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeSheets(); });
+});
+
+(async () => { chores = await store.load(); render(); })();
+</script>
+</body>
+</html>
+
+  
